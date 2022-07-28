@@ -2,16 +2,16 @@ import * as functions from "firebase-functions";
 import { google } from "googleapis";
 
 const initCors = (request: functions.https.Request, response: functions.Response<any>): void => {
-    if (request.method === 'OPTIONS') {
-        response.set('Access-Control-Allow-Methods', 'GET');
-        response.set('Access-Control-Allow-Headers', 'Content-Type');
-        response.set('Access-Control-Max-Age', '3600');
-        response.status(204).send('');
+    if (request.method === "OPTIONS") {
+        response.set("Access-Control-Allow-Methods", "GET");
+        response.set("Access-Control-Allow-Headers", "Content-Type");
+        response.set("Access-Control-Max-Age", "3600");
+        response.status(204).send("");
     }
-    response.set('Access-Control-Allow-Origin', '*');
+    response.set("Access-Control-Allow-Origin", "*");
 };
 
-export const jadwalKSL = functions.https.onRequest(async (request, response) => {
+export const jadwalKSL = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
     initCors(request, response);
 
     const auth = new google.auth.GoogleAuth({
@@ -40,7 +40,7 @@ export const jadwalKSL = functions.https.onRequest(async (request, response) => 
     }
 });
 
-export const anggotaKSL = functions.https.onRequest(async (request, response) => {
+export const anggotaKSL = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
     initCors(request, response);
 
     const auth = new google.auth.GoogleAuth({
