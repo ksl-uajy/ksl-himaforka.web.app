@@ -58,16 +58,16 @@ export const anggotaKSL = functions.region("asia-northeast1").https.onRequest(as
             let data: any = await googleSheets.spreadsheets.values.get({
                 auth,
                 spreadsheetId,
-                range: "'Anggota KSL'!B65:F128",
+                range: "'Anggota KSL'!B2:F64",
             });
             data = data.data.values;
 
             data.map((item: string, index: number) => {
-                if (item[2] == request.query.email) {
+                if (item[3] == request.query.email) {
                     result = {
-                        npm: data[index][0],
-                        full_name: data[index][1],
-                        email: data[index][2],
+                        npm: data[index][1],
+                        full_name: data[index][2],
+                        email: data[index][3],
                         status: "ok"
                     };
                     return result;
@@ -80,12 +80,19 @@ export const anggotaKSL = functions.region("asia-northeast1").https.onRequest(as
 
         case "POST":
             if (request.body.npm && request.body.full_name && request.body.email) {
+                let data: any = await googleSheets.spreadsheets.values.get({
+                    auth,
+                    spreadsheetId,
+                    range: "'Anggota KSL'!B2:B64",
+                });
+                data = data.data.values;
+
                 googleSheets.spreadsheets.values.append({
                     auth,
                     spreadsheetId,
-                    range: "'Anggota KSL'!C2:F64",
+                    range: "'Anggota KSL'!B:F",
                     requestBody: {
-                        values: [[request.body.npm, request.body.full_name, request.body.email, "-"]]
+                        values: [[data.length, request.body.npm, request.body.full_name, request.body.email, "-"]]
                     },
                     valueInputOption: "USER_ENTERED",
                 });
