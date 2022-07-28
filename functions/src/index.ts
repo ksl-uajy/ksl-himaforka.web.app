@@ -29,7 +29,15 @@ export const jadwalKSL = functions.https.onRequest(async (request, response) => 
         range: "'Jadwal KSL'!B2:D128",
     });
 
-    response.send(data.data.values);
+    switch (request.method) {
+        case "GET":
+            response.send(data.data.values);
+            break;
+        default:
+            response.send({ status: "error" });
+            break;
+
+    }
 });
 
 export const anggotaKSL = functions.https.onRequest(async (request, response) => {
@@ -44,11 +52,51 @@ export const anggotaKSL = functions.https.onRequest(async (request, response) =>
     const googleSheets = google.sheets({ version: "v4", auth: client });
     const spreadsheetId = "1OxKqfQCUeutCNPmu3oo25v7cGpIW3ep1FFckqia69xE";
 
-    const data = await googleSheets.spreadsheets.values.get({
-        auth,
-        spreadsheetId,
-        range: "'Jadwal KSL'!B2:D128",
-    });
+    switch (request.method) {
+        case "GET":
+            let result: any;
+            let data: any = await googleSheets.spreadsheets.values.get({
+                auth,
+                spreadsheetId,
+                range: "'Anggota KSL'!B65:F128",
+            });
+            data = data.data.values;
 
-    response.send(data.data.values);
+            data.map((item: string, index: number) => {
+                if (item[2] == request.query.email) {
+                    result = {
+                        npm: data[index][0],
+                        full_name: data[index][1],
+                        email: data[index][2],
+                        status: "ok"
+                    };
+                    return result;
+                }
+            });
+
+            result = result ?? { status: "error" };
+            response.send(result);
+            break;
+
+        case "POST":
+            if (request.body.npm && request.body.full_name && request.body.email) {
+                googleSheets.spreadsheets.values.append({
+                    auth,
+                    spreadsheetId,
+                    range: "'Anggota KSL'!C2:F64",
+                    requestBody: {
+                        values: [[request.body.npm, request.body.full_name, request.body.email, "-"]]
+                    },
+                    valueInputOption: "USER_ENTERED",
+                });
+                response.send({ "status": "ok" });
+                break;
+            }
+            response.send({ "status": "error" });
+            break;
+
+        default:
+            response.send({ status: "error" });
+            break;
+    }
 });
