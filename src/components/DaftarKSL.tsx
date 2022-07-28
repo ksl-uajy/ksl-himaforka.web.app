@@ -30,7 +30,7 @@ function DaftarKSL() {
             is_registered: false
         };
 
-        fetchedData = await fetch(`http://localhost:3000/api/anggota-ksl?email=${fetchedData.mail}`);
+        fetchedData = await fetch(`https://ksl-himaforka.web.app/api/v1/anggota-ksl?email=${fetchedData.mail}`);
         fetchedData = await fetchedData.json();
         if (fetchedData["status"] == "ok") {
             graphData["is_registered"] = true;
@@ -55,7 +55,7 @@ function DaftarKSL() {
     }
 
     async function handleRegister() {
-        let resp: any = await fetch("http://localhost:3000/api/anggota-ksl", {
+        let resp: any = await fetch("https://ksl-himaforka.web.app/api/v1/anggota-ksl", {
             headers: {
                 "Content-Type": "application/json"
             },
