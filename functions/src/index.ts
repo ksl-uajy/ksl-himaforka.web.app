@@ -68,6 +68,7 @@ export const anggotaKSL = functions.region("asia-northeast1").https.onRequest(as
                         npm: data[index][1],
                         full_name: data[index][2],
                         email: data[index][3],
+                        phone_number: data[index][4],
                         status: "ok"
                     };
                     return result;
@@ -79,7 +80,7 @@ export const anggotaKSL = functions.region("asia-northeast1").https.onRequest(as
             break;
 
         case "POST":
-            if (request.body.npm && request.body.full_name && request.body.email) {
+            if (request.body.npm && request.body.full_name && request.body.email && request.body.phone_number) {
                 let data: any = await googleSheets.spreadsheets.values.get({
                     auth,
                     spreadsheetId,
