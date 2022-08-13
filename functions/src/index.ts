@@ -2,13 +2,13 @@ import * as functions from "firebase-functions";
 import { google } from "googleapis";
 
 const initCors = (request: functions.https.Request, response: functions.Response<any>): void => {
+    response.set("Access-Control-Allow-Origin", "*");
     if (request.method === "OPTIONS") {
-        response.set("Access-Control-Allow-Methods", "GET");
+        response.set("Access-Control-Allow-Methods", "GET, POST");
         response.set("Access-Control-Allow-Headers", "Content-Type");
         response.set("Access-Control-Max-Age", "3600");
         response.status(204).send("");
     }
-    response.set("Access-Control-Allow-Origin", "*");
 };
 
 export const jadwalKSL = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
@@ -92,7 +92,7 @@ export const anggotaKSL = functions.region("asia-northeast1").https.onRequest(as
                     spreadsheetId,
                     range: "'Anggota KSL'!B:F",
                     requestBody: {
-                        values: [[data.length, request.body.npm, request.body.full_name, request.body.email, "-"]]
+                        values: [[data.length, request.body.npm, request.body.full_name, request.body.email, request.body.phone_number]]
                     },
                     valueInputOption: "USER_ENTERED",
                 });
