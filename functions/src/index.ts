@@ -11,16 +11,18 @@ const initCors = (request: functions.https.Request, response: functions.Response
     }
 };
 
-export const jadwalKSL = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
-    initCors(request, response);
-
+const authGoogle = async () => {
     const auth = new google.auth.GoogleAuth({
         keyFile: "credentials.json",
         scopes: "https://www.googleapis.com/auth/spreadsheets",
     });
-    const client = await auth.getClient();
+    return auth.getClient();
+};
 
-    const googleSheets = google.sheets({ version: "v4", auth: client });
+const getJadwal = async () => {
+    const auth = await authGoogle();
+
+    const googleSheets = google.sheets({ version: "v4", auth: auth });
     const spreadsheetId = "1OxKqfQCUeutCNPmu3oo25v7cGpIW3ep1FFckqia69xE";
 
     const data = await googleSheets.spreadsheets.values.get({
@@ -29,38 +31,67 @@ export const jadwalKSL = functions.region("asia-northeast1").https.onRequest(asy
         range: "'Jadwal KSL'!B2:D128",
     });
 
+    return data.data.values;
+};
+
+export const jadwalKSL = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+    initCors(request, response);
+    const data = await getJadwal();
+
     switch (request.method) {
         case "GET":
-            response.send(data.data.values);
+            response.send(data);
             break;
         default:
             response.send({ status: "error" });
             break;
-
     }
 });
+
+const getAnggotaKSL = async () => {
+    const auth = await authGoogle();
+
+    const googleSheets = google.sheets({ version: "v4", auth: auth });
+    const spreadsheetId = "1OxKqfQCUeutCNPmu3oo25v7cGpIW3ep1FFckqia69xE";
+
+    const data = await googleSheets.spreadsheets.values.get({
+        auth,
+        spreadsheetId,
+        range: "'Anggota KSL'!B2:F64",
+    });
+
+    return data.data.values;
+};
+
+const addAnggotaKSL = async (index: number, npm: string, full_name: string, email: string, phone_number: string) => {
+    const auth = await authGoogle();
+
+    const googleSheets = google.sheets({ version: "v4", auth: auth });
+    const spreadsheetId = "1OxKqfQCUeutCNPmu3oo25v7cGpIW3ep1FFckqia69xE";
+
+    const resp = await googleSheets.spreadsheets.values.append({
+        auth,
+        spreadsheetId,
+        range: "'Anggota KSL'!B:F",
+        requestBody: {
+            values: [[index, npm, full_name, email, phone_number]]
+        },
+        valueInputOption: "USER_ENTERED",
+    });
+
+    if (resp.status === 200) {
+        return true;
+    }
+    return false;
+};
 
 export const anggotaKSL = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
     initCors(request, response);
 
-    const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
-        scopes: "https://www.googleapis.com/auth/spreadsheets",
-    });
-    const client = await auth.getClient();
-
-    const googleSheets = google.sheets({ version: "v4", auth: client });
-    const spreadsheetId = "1OxKqfQCUeutCNPmu3oo25v7cGpIW3ep1FFckqia69xE";
-
     switch (request.method) {
         case "GET":
             let result: any;
-            let data: any = await googleSheets.spreadsheets.values.get({
-                auth,
-                spreadsheetId,
-                range: "'Anggota KSL'!B2:F64",
-            });
-            data = data.data.values;
+            let data: any = await getAnggotaKSL();
 
             data.map((item: string, index: number) => {
                 if (item[3] == request.query.email) {
@@ -81,23 +112,29 @@ export const anggotaKSL = functions.region("asia-northeast1").https.onRequest(as
 
         case "POST":
             if (request.body.npm && request.body.full_name && request.body.email && request.body.phone_number) {
-                let data: any = await googleSheets.spreadsheets.values.get({
-                    auth,
-                    spreadsheetId,
-                    range: "'Anggota KSL'!B2:B64",
-                });
-                data = data.data.values;
+                let result: any;
+                let data: any = await getAnggotaKSL();
 
-                googleSheets.spreadsheets.values.append({
-                    auth,
-                    spreadsheetId,
-                    range: "'Anggota KSL'!B:F",
-                    requestBody: {
-                        values: [[data.length, request.body.npm, request.body.full_name, request.body.email, request.body.phone_number]]
-                    },
-                    valueInputOption: "USER_ENTERED",
+                data.map((item: string) => {
+                    if (item[3] == request.body.email) {
+                        result = {
+                            status: "userExists"
+                        };
+                        return result;
+                    }
                 });
-                response.send({ "status": "ok" });
+
+                if (result) {
+                    response.send(result);
+                    break;
+                }
+
+                const resp = await addAnggotaKSL(data.length, request.body.npm, request.body.full_name, request.body.email, request.body.phone_number);
+                if (resp) {
+                    response.send({ "status": "ok" });
+                } else {
+                    response.send({ "status": "error" });
+                }
                 break;
             }
             response.send({ "status": "error" });
